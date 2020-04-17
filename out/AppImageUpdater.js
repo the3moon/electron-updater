@@ -117,7 +117,9 @@ class AppImageUpdater extends _BaseUpdater().BaseUpdater {
             logger: this._logger,
             newFile: updateFile,
             isUseMultipleRangeRequest: provider.isUseMultipleRangeRequest,
-            requestHeaders: downloadUpdateOptions.requestHeaders
+            requestHeaders: downloadUpdateOptions.requestHeaders,
+            onProgress: downloadOptions.onProgress,
+            cancellationToken: downloadUpdateOptions.cancellationToken
           }).download();
         } catch (e) {
           this._logger.error(`Cannot download differentially, fallback to full download: ${e.stack || e}`); // during test (developer machine mac) we must throw error

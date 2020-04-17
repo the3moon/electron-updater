@@ -192,6 +192,20 @@ class DifferentialDownloader {
           resolve();
         });
       });
+
+      if (this.options.onProgress && this.options.cancellationToken) {
+        let contentLength = 0;
+        for (const task of tasks) {
+          const length = task.end - task.start
+          if (task.kind === _downloadPlanBuilder().OperationKind.DOWNLOAD) {
+            contentLength += length
+          }
+        }
+        if (contentLength) {
+          streams.push(new (_builderUtilRuntime().ProgressCallbackTransform)(contentLength, this.options.cancellationToken, this.options.onProgress));
+        }
+      }
+
       streams.push(fileOut);
       let lastStream = null;
 

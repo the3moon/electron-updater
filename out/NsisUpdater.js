@@ -135,7 +135,7 @@ class NsisUpdater extends _BaseUpdater().BaseUpdater {
         const packageInfo = fileInfo.packageInfo;
         const isWebInstaller = packageInfo != null && packageFile != null;
 
-        if (isWebInstaller || (await this.differentialDownloadInstaller(fileInfo, downloadUpdateOptions, destinationFile, provider))) {
+        if (isWebInstaller || (await this.differentialDownloadInstaller(fileInfo, downloadUpdateOptions, destinationFile, provider, downloadOptions.onProgress))) {
           await this.httpExecutor.download(fileInfo.url, destinationFile, downloadOptions);
         }
 
@@ -148,7 +148,7 @@ class NsisUpdater extends _BaseUpdater().BaseUpdater {
         }
 
         if (isWebInstaller) {
-          if (await this.differentialDownloadWebPackage(packageInfo, packageFile, provider)) {
+          if (await this.differentialDownloadWebPackage(packageInfo, packageFile, provider, downloadUpdateOptions, downloadOptions.onProgress)) {
             try {
               await this.httpExecutor.download(new (_url().URL)(packageInfo.path), packageFile, {
                 headers: downloadUpdateOptions.requestHeaders,
@@ -239,7 +239,7 @@ class NsisUpdater extends _BaseUpdater().BaseUpdater {
     return true;
   }
 
-  async differentialDownloadInstaller(fileInfo, downloadUpdateOptions, installerPath, provider) {
+  async differentialDownloadInstaller(fileInfo, downloadUpdateOptions, installerPath, provider,onProgress) {
     try {
       if (this._testOnlyOptions != null && !this._testOnlyOptions.isUseDifferentialDownload) {
         return true;
@@ -280,7 +280,9 @@ class NsisUpdater extends _BaseUpdater().BaseUpdater {
         logger: this._logger,
         newFile: installerPath,
         isUseMultipleRangeRequest: provider.isUseMultipleRangeRequest,
-        requestHeaders: downloadUpdateOptions.requestHeaders
+        requestHeaders: downloadUpdateOptions.requestHeaders,
+        onProgress,
+        cancellationToken: downloadUpdateOptions.cancellationToken
       }).download(blockMapDataList[0], blockMapDataList[1]);
       return false;
     } catch (e) {
@@ -295,7 +297,7 @@ class NsisUpdater extends _BaseUpdater().BaseUpdater {
     }
   }
 
-  async differentialDownloadWebPackage(packageInfo, packagePath, provider) {
+  async differentialDownloadWebPackage(packageInfo, packagePath, provider,downloadUpdateOptions, onProgress) {
     if (packageInfo.blockMapSize == null) {
       return true;
     }
@@ -307,7 +309,9 @@ class NsisUpdater extends _BaseUpdater().BaseUpdater {
         logger: this._logger,
         newFile: packagePath,
         requestHeaders: this.requestHeaders,
-        isUseMultipleRangeRequest: provider.isUseMultipleRangeRequest
+        isUseMultipleRangeRequest: provider.isUseMultipleRangeRequest,
+        onProgress,
+        cancellationToken: downloadUpdateOptions.cancellationToken
       }).download();
     } catch (e) {
       this._logger.error(`Cannot download differentially, fallback to full download: ${e.stack || e}`); // during test (developer machine mac or linux) we must throw error

@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { BlockMapDataHolder, HttpExecutor } from "builder-util-runtime";
+import { BlockMapDataHolder, HttpExecutor, DownloadOptions, CancellationToken } from "builder-util-runtime";
 import { BlockMap } from "builder-util-runtime/out/blockMapApi";
 import { OutgoingHttpHeaders, RequestOptions } from "http";
 import { Logger } from "../main";
@@ -11,6 +11,8 @@ export interface DifferentialDownloaderOptions {
     readonly newFile: string;
     readonly requestHeaders: OutgoingHttpHeaders | null;
     readonly isUseMultipleRangeRequest?: boolean;
+    readonly onProgress: DownloadOptions['onProgress']
+    readonly cancellationToken: CancellationToken
 }
 export declare abstract class DifferentialDownloader {
     protected readonly blockAwareFileInfo: BlockMapDataHolder;
