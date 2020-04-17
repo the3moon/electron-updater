@@ -193,6 +193,8 @@ class DifferentialDownloader {
         });
       });
 
+
+      let downloadStream;
       if (this.options.onProgress && this.options.cancellationToken) {
         let contentLength = 0;
         for (const task of tasks) {
@@ -202,7 +204,7 @@ class DifferentialDownloader {
           }
         }
         if (contentLength) {
-          streams.push(new (_builderUtilRuntime().ProgressCallbackTransform)(contentLength, this.options.cancellationToken, this.options.onProgress));
+          downloadStream = new (_builderUtilRuntime().ProgressCallbackTransform)(contentLength, this.options.cancellationToken, this.options.onProgress);
         }
       }
 
@@ -220,6 +222,9 @@ class DifferentialDownloader {
       }
 
       const firstStream = streams[0];
+      if(downloadStream){
+        downloadStream.pipe(firstStream);
+      }
       let w;
 
       if (this.options.isUseMultipleRangeRequest) {
@@ -237,10 +242,18 @@ class DifferentialDownloader {
       w = index => {
         if (index >= tasks.length) {
           if (this.fileMetadataBuffer != null) {
-            firstStream.write(this.fileMetadataBuffer);
+            if(downloadStream){
+              downloadStream.write(this.fileMetadataBuffer);
+            }else{
+              firstStream.write(this.fileMetadataBuffer);
+            }
           }
 
-          firstStream.end();
+          if(downloadStream){
+            downloadStream.end();
+          }else{
+            firstStream.end();
+          }          
           return;
         }
 
@@ -265,9 +278,12 @@ class DifferentialDownloader {
             reject((0, _builderUtilRuntime().createHttpError)(response));
           }
 
-          response.pipe(firstStream, {
-            end: false
-          });
+          if(downloadStream){
+            response.pipe(downloadStream, {end: false});
+          }else{
+            response.pipe(firstStream, {end: false});
+          }
+
           response.once("end", () => {
             if (++downloadOperationCount === 100) {
               downloadOperationCount = 0;
